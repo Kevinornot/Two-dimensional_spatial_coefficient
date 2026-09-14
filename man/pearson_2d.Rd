@@ -14,8 +14,26 @@ pearson_2d(x, y, crop = 0, use = "complete.obs")
 \item{use}{Missing-value behavior, either \code{"complete.obs"} or \code{"everything"}.}
 }
 \value{
-One numeric Pearson correlation coefficient.
+One numeric Pearson correlation coefficient, or \code{NA} as described above.
 }
 \description{
 Pixel-wise Pearson correlation for aligned DGT maps
+}
+\details{
+Each crop fraction is multiplied by the corresponding row or column count
+and rounded down to the number of pixels removed from that edge. A scalar
+applies to all edges; four fractions specify top, right, bottom and left.
+
+After cropping, \code{use = "complete.obs"} excludes any paired pixel for which
+either value is non-finite (\code{NA}, \code{NaN}, \code{Inf} or \code{-Inf}). At least two finite
+pairs are required for either setting. With \code{use = "everything"}, any
+non-finite value in the cropped maps returns \code{NA} once that minimum is met.
+Otherwise, zero variance in either retained input raises an error.
+
+Maps must be spatially registered and aligned before analysis. Identical
+dimensions alone do not establish alignment, and independently resized or
+unregistered maps can produce misleading results. The coefficient describes
+pixel-wise association, not a distance-weighted spatial statistic. Adjacent
+pixels can be spatially autocorrelated, so conventional pixel-level p-values
+that treat pixels as independent replicates are not supplied.
 }

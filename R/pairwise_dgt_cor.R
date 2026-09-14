@@ -10,7 +10,13 @@ pairwise_dgt_cor <- function(fe, s, p, crop = 0, use = "complete.obs") {
   inputs <- list(Fe = fe, S = s, P = p)
   pairs <- list(c("Fe", "S"), c("S", "P"), c("Fe", "P"))
   rows <- lapply(pairs, function(pair) {
-    paired <- .paired_dgt_pixels(inputs[[pair[1]]], inputs[[pair[2]]], crop, use)
+    paired <- tryCatch(
+      .paired_dgt_pixels(inputs[[pair[1]]], inputs[[pair[2]]], crop, use),
+      error = function(error) {
+        stop("Pair ", paste(pair, collapse = "-"), ": ",
+             conditionMessage(error), call. = FALSE)
+      }
+    )
     coefficient <- if (paired$return_na) {
       NA_real_
     } else {

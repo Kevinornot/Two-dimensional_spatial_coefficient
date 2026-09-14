@@ -43,17 +43,30 @@ batch_dgt_cor <- function(manifest, crop = 0, invert = FALSE,
     ))
   }
   rows <- lapply(seq_len(nrow(manifest)), function(index) {
+    sample <- as.character(manifest$sample[index])
     maps <- lapply(c("Fe", "S", "P"), function(element) {
-      read_dgt_image(
-        manifest[[element]][index],
-        invert = directions[[element]],
-        allow_color = allow_color,
-        rgb_tolerance = rgb_tolerance
+      path <- manifest[[element]][index]
+      tryCatch(
+        read_dgt_image(
+          path,
+          invert = directions[[element]],
+          allow_color = allow_color,
+          rgb_tolerance = rgb_tolerance
+        ),
+        error = function(error) {
+          stop("Sample '", sample, "', element ", element, " (", path, "): ",
+               conditionMessage(error), call. = FALSE)
+        }
       )
     })
     names(maps) <- c("Fe", "S", "P")
-    result <- pairwise_dgt_cor(maps$Fe, maps$S, maps$P, crop = crop, use = use)
-    result$sample <- as.character(manifest$sample[index])
+    result <- tryCatch(
+      pairwise_dgt_cor(maps$Fe, maps$S, maps$P, crop = crop, use = use),
+      error = function(error) {
+        stop("Sample '", sample, "': ", conditionMessage(error), call. = FALSE)
+      }
+    )
+    result$sample <- sample
     result[c("sample", "pair", "n_pixels", "pearson_r")]
   })
   do.call(rbind, rows)

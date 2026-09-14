@@ -45,3 +45,36 @@ test_that("read_dgt_image validates arguments and extensions", {
   expect_error(read_dgt_image("missing.png"), "does not exist")
   expect_error(read_dgt_image(file, rgb_tolerance = -1), "rgb_tolerance")
 })
+
+test_that("RGB grayscale conversion preserves singleton image axes", {
+  for (shape in list(c(1L, 4L), c(4L, 1L))) {
+    x <- matrix(c(0, 1 / 3, 2 / 3, 1), nrow = shape[1], ncol = shape[2])
+    file <- tempfile(fileext = ".png")
+    png::writePNG(array(rep(x, 3), dim = c(shape, 3L)), file)
+
+    observed <- read_dgt_image(file)
+
+    expect_identical(dim(observed), shape)
+    expect_equal(as.vector(observed), as.vector(x), tolerance = 1 / 255)
+    inverted <- read_dgt_image(file, invert = TRUE)
+    expect_identical(dim(inverted), shape)
+    expect_equal(as.vector(inverted), as.vector(1 - x), tolerance = 1 / 255)
+  }
+})
+
+test_that("explicit RGB luminance conversion preserves singleton image axes", {
+  for (shape in list(c(1L, 4L), c(4L, 1L))) {
+    x <- matrix(c(0, 1 / 3, 2 / 3, 1), nrow = shape[1], ncol = shape[2])
+    color <- array(0, dim = c(shape, 3L))
+    color[, , 1] <- x
+    file <- tempfile(fileext = ".png")
+    png::writePNG(color, file)
+
+    expect_warning(
+      observed <- read_dgt_image(file, allow_color = TRUE),
+      "luminance is not concentration"
+    )
+    expect_identical(dim(observed), shape)
+    expect_equal(as.vector(observed), as.vector(0.299 * x), tolerance = 1 / 255)
+  }
+})

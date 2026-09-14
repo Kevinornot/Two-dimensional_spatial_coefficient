@@ -60,3 +60,52 @@ test_that("batch_dgt_cor returns a typed empty result for an empty manifest", {
                    c(sample = "character", pair = "character", n_pixels = "integer", pearson_r = "double"))
   expect_equal(nrow(observed), 0L)
 })
+
+test_that("batch dimension failures identify the sample and affected pair", {
+  valid <- tempfile(fileext = ".png")
+  mismatched <- tempfile(fileext = ".png")
+  png::writePNG(matrix(seq(0, 1, length.out = 9), 3, 3), valid)
+  png::writePNG(matrix(seq(0, 1, length.out = 6), 3, 2), mismatched)
+  manifest <- data.frame(
+    sample = c("sample-A", "sample-B"), Fe = valid, S = valid,
+    P = c(valid, mismatched)
+  )
+
+  error <- tryCatch(batch_dgt_cor(manifest), error = identity)
+  expect_s3_class(error, "error")
+  expect_match(conditionMessage(error), "sample-B.*S-P.*identical dimensions")
+})
+
+test_that("batch variance failures identify the sample and affected pair", {
+  valid <- tempfile(fileext = ".png")
+  constant <- tempfile(fileext = ".png")
+  png::writePNG(matrix(seq(0, 1, length.out = 9), 3, 3), valid)
+  png::writePNG(matrix(0.5, 3, 3), constant)
+  manifest <- data.frame(
+    sample = c("sample-A", "sample-B"), Fe = valid, S = valid,
+    P = c(valid, constant)
+  )
+
+  error <- tryCatch(batch_dgt_cor(manifest), error = identity)
+  expect_s3_class(error, "error")
+  expect_match(conditionMessage(error), "sample-B.*S-P.*zero variance")
+})
+
+test_that("batch image failures identify the sample, element and filename", {
+  valid <- tempfile(fileext = ".png")
+  colored <- tempfile(pattern = "color_s", fileext = ".png")
+  png::writePNG(matrix(seq(0, 1, length.out = 9), 3, 3), valid)
+  color <- array(0, dim = c(3, 3, 3))
+  color[, , 1] <- 1
+  png::writePNG(color, colored)
+  manifest <- data.frame(
+    sample = c("sample-A", "sample-B"), Fe = valid,
+    S = c(valid, colored), P = valid
+  )
+
+  error <- tryCatch(batch_dgt_cor(manifest), error = identity)
+
+  expect_s3_class(error, "error")
+  expect_match(conditionMessage(error), "sample-B.*S.*colored RGB image")
+  expect_match(conditionMessage(error), basename(colored), fixed = TRUE)
+})

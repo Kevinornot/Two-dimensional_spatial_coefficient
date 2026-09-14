@@ -60,6 +60,7 @@ read_dgt_image <- function(path, invert = FALSE, allow_color = FALSE,
     } else {
       intensity <- (rgb[, , 1] + rgb[, , 2] + rgb[, , 3]) / 3
     }
+    dim(intensity) <- dim(image)[1:2]
   } else {
     stop("The image must be two-dimensional grayscale or RGB.", call. = FALSE)
   }

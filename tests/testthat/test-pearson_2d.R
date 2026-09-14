@@ -31,3 +31,12 @@ test_that("pearson_2d rejects invalid inputs", {
   expect_error(pearson_2d(matrix(1:4, 2), matrix(1:4, 2), crop = 0.5), "less than 0.5")
   expect_error(pearson_2d(matrix(1:4, 2), matrix(1:4, 2), use = "bad"), "use")
 })
+
+test_that("asymmetric crops round down in top right bottom left order", {
+  x <- matrix(1:120, 10, 12)
+  y <- matrix((1:120)^2 %% 97, 10, 12)
+  # Remove 1 top row, 3 right columns, 2 bottom rows and 4 left columns.
+  expected <- cor(as.vector(x[2:8, 5:9]), as.vector(y[2:8, 5:9]))
+
+  expect_equal(pearson_2d(x, y, crop = c(0.19, 0.26, 0.21, 0.34)), expected)
+})
