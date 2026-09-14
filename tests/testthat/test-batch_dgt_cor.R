@@ -42,3 +42,21 @@ test_that("batch_dgt_cor validates the manifest and invert argument", {
   manifest <- data.frame(sample = "a", Fe = "x", S = "x", P = "x")
   expect_error(batch_dgt_cor(manifest, invert = c(TRUE, FALSE)), "invert")
 })
+
+test_that("batch_dgt_cor returns a typed empty result for an empty manifest", {
+  manifest <- data.frame(
+    sample = character(),
+    Fe = character(),
+    S = character(),
+    P = character(),
+    stringsAsFactors = FALSE
+  )
+
+  observed <- batch_dgt_cor(manifest)
+
+  expect_s3_class(observed, "data.frame")
+  expect_identical(names(observed), c("sample", "pair", "n_pixels", "pearson_r"))
+  expect_identical(vapply(observed, typeof, character(1)),
+                   c(sample = "character", pair = "character", n_pixels = "integer", pearson_r = "double"))
+  expect_equal(nrow(observed), 0L)
+})

@@ -33,6 +33,15 @@ batch_dgt_cor <- function(manifest, crop = 0, invert = FALSE,
     stop("`manifest` contains a duplicate sample identifier.", call. = FALSE)
   }
   directions <- .normalize_invert(invert)
+  if (nrow(manifest) == 0L) {
+    return(data.frame(
+      sample = character(),
+      pair = character(),
+      n_pixels = integer(),
+      pearson_r = numeric(),
+      stringsAsFactors = FALSE
+    ))
+  }
   rows <- lapply(seq_len(nrow(manifest)), function(index) {
     maps <- lapply(c("Fe", "S", "P"), function(element) {
       read_dgt_image(
